@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker Online vs Computador</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #076324;
+            margin: 0;
+            padding: 20px;
+            color: white;
+        }
+        
+        .game-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #0a802e;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        h1 {
+            text-align: center;
+            color: gold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .table {
+            background-color: #0a5c22;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+            height: 400px;
+            border: 10px solid #5e2c04;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        .community-cards {
+            display: flex;
+            justify-content: center;
+            margin: 40px 0;
+        }
+        
+        .card {
+            width: 80px;
+            height: 120px;
+            background-color: white;
+            border-radius: 5px;
+            margin: 0 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            color: black;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+        
+        .card.red {
+            color: red;
+        }
+        
+        .card-back {
+            background: linear-gradient(135deg, #a00, #d00);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+        }
+        
+        .player {
+            position: absolute;
+            width: 200px;
+            text-align: center;
+        }
+        
+        .player-cards {
+            display: flex;
+            justify-content: center;
+        }
+        
+        .player-info {
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        .player-chips {
+            color: gold;
+        }
+        
+        .player1 {
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .player2 {
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: gold;
+            color: #0a5c22;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background-color: #ffd700;
+            transform: scale(1.05);
+        }
+        
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .bet-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        input[type="number"] {
+            width: 80px;
+            padding: 8px;
+            border-radius: 5px;
+            border: none;
+        }
+        
+        .game-info {
+            background-color: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .pot {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            border-radius: 50%;
+            color: gold;
+            font-weight: bold;
+        }
+        
+        .card-value {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            font-size: 16px;
+        }
+        
+        .card-suit {
+            font-size: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Poker Texas Hold'em</h1>
+        
+        <div class="game-info" id="gameInfo">
+            Bem-vindo ao jogo de Poker! Faça sua aposta para começar.
+        </div>
+        
+        <div class="table">
+            <div class="pot" id="pot">$0</div>
+            
+            <div class="community-cards" id="communityCards">
+                <!-- Cartas comunitárias serão inseridas aqui -->
+            </div>
+            
+            <div class="player player2">
+                <div class="player-info">
+                    Computador <span class="player-chips" id="computerChips">$1000</span>
+                </div>
+                <div class="player-cards" id="computerCards">
+                    <div class="card card-back">?</div>
+                    <div class="card card-back">?</div>
+                </div>
+            </div>
+            
+            <div class="player player1">
+                <div class="player-info">
+                    Você <span class="player-chips" id="playerChips">$1000</span>
+                </div>
+                <div class="player-cards" id="playerCards">
+                    <!-- Cartas do jogador serão inseridas aqui -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="foldButton">Desistir</button>
+            <button id="checkButton">Apostar $0</button>
+            <button id="callButton">Pagar $0</button>
+            <div class="bet-controls">
+                <button id="raiseButton">Aumentar</button>
+                <input type="number" id="betAmount" min="0" value="10">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variáveis do jogo
+        let playerChips = 1000;
+        let computerChips = 1000;
+        let pot = 0;
+        let currentBet = 0;
+        let playerBetThisRound = 0;
+        let computerBetThisRound = 0;
+        let deck = [];
+        let playerHand = [];
+        let computerHand = [];
+        let communityCards = [];
+        let gameStage = 'preflop'; // preflop, flop, turn, river, showdown
+        let gameStarted = false;
+        
+        // Elementos do DOM
+        const gameInfoEl = document.getElementById('gameInfo');
+        const potEl = document.getElementById('pot');
+        const playerChipsEl = document.getElementById('playerChips');
+        const computerChipsEl = document.getElementById('computerChips');
+        const communityCardsEl = document.getElementById('communityCards');
+        const playerCardsEl = document.getElementById('playerCards');
+        const computerCardsEl = document.getElementById('computerCards');
+        const foldButton = document.getElementById('foldButton');
+        const checkButton = document.getElementById('checkButton');
+        const callButton = document.getElementById('callButton');
+        const raiseButton = document.getElementById('raiseButton');
+        const betAmountInput = document.getElementById('betAmount');
+        
+        // Inicializa o jogo
+        function initGame() {
+            updateUI();
+            setupEventListeners();
+        }
+        
+        // Configura os event listeners
+        function setupEventListeners() {
+            foldButton.addEventListener('click', fold);
+            checkButton.addEventListener('click', check);
+            callButton.addEventListener('click', call);
+            raiseButton.addEventListener('click', raise);
+        }
+        
+        // Começa uma nova mão
+        function startNewHand() {
+            if (playerChips <= 0 || computerChips <= 0) {
+                gameInfoEl.textContent = playerChips <= 0 ? 
+                    'Você ficou sem fichas! Game Over.' : 
+                    'O computador ficou sem fichas! Você venceu!';
+                disableAllButtons();
+                return;
+            }
+            
+            gameStarted = true;
+            gameStage = 'preflop';
+            currentBet = 0;
+            playerBetThisRound = 0;
+            computerBetThisRound = 0;
+            pot = 0;
+            deck = createDeck();
+            shuffleDeck(deck);
+            playerHand = [drawCard(), drawCard()];
+            computerHand = [drawCard(), drawCard()];
+            communityCards = [];
+            
+            // Pequena cega e grande cega (alternando)
+            const smallBlind = 5;
+            const bigBlind = 10;
+            
+            playerChips -= bigBlind;
+            computerChips -= smallBlind;
+            pot = smallBlind + bigBlind;
+            currentBet = bigBlind;
+            playerBetThisRound = bigBlind;
+            
+            updateUI();
+            updateActionButtons();
+            
+            gameInfoEl.textContent = 'Nova mão iniciada. Você postou a big blind ($10). É sua vez.';
+        }
+        
+        // Cria um baralho
+        function createDeck() {
+            const suits = ['♠', '♥', '♦', '♣'];
+            const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+            const deck = [];
+            
+            for (let suit of suits) {
+                for (let value of values) {
+                    deck.push({ suit, value });
+                }
+            }
+            
+            return deck;
+        }
+        
+        // Embaralha o baralho
+        function shuffleDeck(deck) {
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+        }
+        
+        // Compra uma carta do baralho
+        function drawCard() {
+            return deck.pop();
+        }
+        
+        // Atualiza a interface do usuário
+        function updateUI() {
+            // Atualiza fichas
+            document.getElementById('playerChips').textContent = `$${playerChips}`;
+            document.getElementById('computerChips').textContent = `$${computerChips}`;
+            
+            // Atualiza pote
+            potEl.textContent = `$${pot}`;
+            
+            // Atualiza cartas do jogador
+            playerCardsEl.innerHTML = '';
+            playerHand.forEach(card => {
+                const cardEl = createCardElement(card);
+                playerCardsEl.appendChild(cardEl);
+            });
+            
+            // Atualiza cartas do computador
+            computerCardsEl.innerHTML = '';
+            if (gameStage === 'showdown') {
+                computerHand.forEach(card => {
+                    const cardEl = createCardElement(card);
+                    computerCardsEl.appendChild(cardEl);
+                });
+            } else {
+                computerHand.forEach(() => {
+                    const cardEl = document.createElement('div');
+                    cardEl.className = 'card card-back';
+                    cardEl.textContent = '?';
+                    computerCardsEl.appendChild(cardEl);
+                });
+            }
+            
+            // Atualiza cartas comunitárias
+            communityCardsEl.innerHTML = '';
+            communityCards.forEach(card => {
+                const cardEl = createCardElement(card);
+                communityCardsEl.appendChild(cardEl);
+            });
+            
+            // Preenche com cartas viradas para baixo para as cartas que ainda não foram reveladas
+            const totalCommunityCards = 
+                gameStage === 'preflop' ? 0 :
+                gameStage === 'flop' ? 3 :
+                gameStage === 'turn' ? 4 :
+                5;
+                
+            for (let i = communityCards.length; i < totalCommunityCards; i++) {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'card card-back';
+                communityCardsEl.appendChild(cardEl);
+            }
+            
+            // Atualiza botões de ação
+            updateActionButtons();
+        }
+        
+        // Cria um elemento HTML para uma carta
+        function createCardElement(card) {
+            const cardEl = document.createElement('div');
+            cardEl.className = 'card';
+            
+            if (card.suit === '♥' || card.suit === '♦') {
+                cardEl.classList.add('red');
+            }
+            
+            const valueEl = document.createElement('div');
+            valueEl.className = 'card-value';
+            valueEl.textContent = card.value;
+            
+            const suitEl = document.createElement('div');
+            suitEl.className = 'card-suit';
+            suitEl.textContent = card.suit;
+            
+            cardEl.appendChild(valueEl);
+            cardEl.appendChild(suitEl);
+            
+            return cardEl;
+        }
+        
+        // Atualiza os botões de ação
+        function updateActionButtons() {
+            const toCall = currentBet - playerBetThisRound;
+            
+            callButton.textContent = toCall > 0 ? `Pagar $${toCall}` : 'Apostar $0';
+            checkButton.style.display = toCall > 0 ? 'none' : 'block';
+            callButton.style.display = toCall > 0 ? 'block' : 'none';
+            
+            // Desabilita botões se não houver fichas suficientes
+            foldButton.disabled = !gameStarted;
+            checkButton.disabled = !gameStarted || toCall > 0;
+            callButton.disabled = !gameStarted || toCall > playerChips;
+            
+            // Configura o valor mínimo para aumentar
+            const minRaise = currentBet > 0 ? currentBet * 2 : 10;
+            betAmountInput.min = minRaise;
+            betAmountInput.value = minRaise;
+            betAmountInput.max = playerChips;
+            
+            raiseButton.disabled = !gameStarted || minRaise > playerChips;
+        }
+        
+        // Desabilita todos os botões
+        function disableAllButtons() {
+            foldButton.disabled = true;
+            checkButton.disabled = true;
+            callButton.disabled = true;
+            raiseButton.disabled = true;
+        }
+        
+        // Ação: Desistir
+        function fold() {
+            gameInfoEl.textContent = 'Você desistiu. O computador vence esta mão.';
+            computerChips += pot;
+            gameStarted = false;
+            disableAllButtons();
+            setTimeout(startNewHand, 3000);
+        }
+        
+        // Ação: Apostar $0 (quando não há aposta atual)
+        function check() {
+            playerBetThisRound = currentBet;
+            gameInfoEl.textContent = 'Você apostou $0. Vez do computador.';
+            setTimeout(computerAction, 1500);
+        }
+        
+        // Ação: Pagar a aposta atual
+        function call() {
+            const toCall = currentBet - playerBetThisRound;
+            
+            if (toCall > playerChips) {
+                gameInfoEl.textContent = 'Você não tem fichas suficientes para pagar.';
+                return;
+            }
+            
+            playerChips -= toCall;
+            pot += toCall;
+            playerBetThisRound = currentBet;
+            
+            gameInfoEl.textContent = `Você pagou $${toCall}. Vez do computador.`;
+            updateUI();
+            setTimeout(computerAction, 1500);
+        }
+        
+        // Ação: Aumentar a aposta
+        function raise() {
+            const raiseAmount = parseInt(betAmountInput.value);
+            const toCall = currentBet - playerBetThisRound;
+            const totalCost = toCall + raiseAmount;
+            
+            if (raiseAmount < currentBet * 2 && currentBet > 0) {
+                gameInfoEl.textContent = `Você deve aumentar para pelo menos $${currentBet * 2}.`;
+                return;
+            }
+            
+            if (totalCost > playerChips) {
+                gameInfoEl.textContent = 'Você não tem fichas suficientes para este aumento.';
+                return;
+            }
+            
+            playerChips -= totalCost;
+            pot += totalCost;
+            currentBet = playerBetThisRound + raiseAmount;
+            playerBetThisRound = currentBet;
+            
+            gameInfoEl.textContent = `Você aumentou para $${currentBet}. Vez do computador.`;
+            updateUI();
+            setTimeout(computerAction, 1500);
+        }
+        
+        // Ação do computador
+        function computerAction() {
+            if (!gameStarted) return;
+            
+            const toCall = currentBet - computerBetThisRound;
+            const computerHandStrength = evaluateHandStrength([...computerHand, ...communityCards]);
+            
+            // Estratégia simples do computador
+            let action;
+            let amount = 0;
+            
+            if (toCall === 0) {
+                // Computador pode checar ou apostar
+                if (computerHandStrength > 0.7 || Math.random() < 0.3) {
+                    action = 'bet';
+                    amount = Math.min(
+                        Math.floor(computerChips * 0.3 * computerHandStrength),
+                        computerChips
+                    );
+                    amount = Math.max(amount, 10);
+                } else {
+                    action = 'check';
+                }
+            } else {
+                // Computador deve pagar, aumentar ou desistir
+                if (computerHandStrength > 0.8 && computerChips > toCall * 3) {
+                    // Mão muito boa - aumenta
+                    action = 'raise';
+                    amount = Math.min(
+                        Math.floor(toCall * 2 + computerChips * 0.3 * computerHandStrength),
+                        computerChips
+                    );
+                } else if (computerHandStrength > 0.5 || toCall / pot < 0.3) {
+                    // Mão razoável ou pot odds boas - paga
+                    action = 'call';
+                    amount = toCall;
+                } else {
+                    // Mão ruim - desiste
+                    action = 'fold';
+                }
+            }
+            
+            // Executa a ação do computador
+            switch (action) {
+                case 'check':
+                    computerBetThisRound = currentBet;
+                    gameInfoEl.textContent = 'O computador apostou $0.';
+                    break;
+                    
+                case 'call':
+                    computerChips -= amount;
+                    pot += amount;
+                    computerBetThisRound = currentBet;
+                    gameInfoEl.textContent = `O computador pagou $${amount}.`;
+                    break;
+                    
+                case 'bet':
+                    computerChips -= amount;
+                    pot += amount;
+                    currentBet = computerBetThisRound + amount;
+                    computerBetThisRound = currentBet;
+                    gameInfoEl.textContent = `O computador apostou $${amount}.`;
+                    break;
+                    
+                case 'raise':
+                    computerChips -= amount;
+                    pot += amount;
+                    currentBet = computerBetThisRound + amount;
+                    computerBetThisRound = currentBet;
+                    gameInfoEl.textContent = `O computador aumentou para $${amount}.`;
+                    break;
+                    
+                case 'fold':
+                    gameInfoEl.textContent = 'O computador desistiu. Você vence esta mão!';
+                    playerChips += pot;
+                    gameStarted = false;
+                    disableAllButtons();
+                    setTimeout(startNewHand, 3000);
+                    return;
+            }
+            
+            updateUI();
+            
+            // Verifica se a rodada terminou
+            if (playerBetThisRound === computerBetThisRound) {
+                advanceGameStage();
+            }
+        }
+        
+        // Avança para o próximo estágio do jogo
+        function advanceGameStage() {
+            playerBetThisRound = 0;
+            computerBetThisRound = 0;
+            currentBet = 0;
+            
+            switch (gameStage) {
+                case 'preflop':
+                    gameStage = 'flop';
+                    dealCommunityCards(3);
+                    gameInfoEl.textContent = 'Flop revelado. É sua vez.';
+                    break;
+                    
+                case 'flop':
+                    gameStage = 'turn';
+                    dealCommunityCards(1);
+                    gameInfoEl.textContent = 'Turn revelado. É sua vez.';
+                    break;
+                    
+                case 'turn':
+                    gameStage = 'river';
+                    dealCommunityCards(1);
+                    gameInfoEl.textContent = 'River revelado. É sua vez.';
+                    break;
+                    
+                case 'river':
+                    gameStage = 'showdown';
+                    determineWinner();
+                    break;
+            }
+            
+            updateUI();
+        }
+        
+        // Distribui cartas comunitárias
+        function dealCommunityCards(count) {
+            for (let i = 0; i < count; i++) {
+                communityCards.push(drawCard());
+            }
+        }
+        
+        // Determina o vencedor no showdown
+        function determineWinner() {
+            const playerFinalHand = [...playerHand, ...communityCards];
+            const computerFinalHand = [...computerHand, ...communityCards];
+            
+            const playerScore = evaluateHand(playerFinalHand);
+            const computerScore = evaluateHand(computerFinalHand);
+            
+            gameInfoEl.textContent = 'Showdown! Revelando cartas...';
+            updateUI();
+            
+            setTimeout(() => {
+                if (playerScore > computerScore) {
+                    gameInfoEl.textContent = 'Você venceu esta mão!';
+                    playerChips += pot;
+                } else if (computerScore > playerScore) {
+                    gameInfoEl.textContent = 'O computador venceu esta mão.';
+                    computerChips += pot;
+                } else {
+                    gameInfoEl.textContent = 'Empate! O pote é dividido.';
+                    playerChips += Math.floor(pot / 2);
+                    computerChips += Math.floor(pot / 2);
+                }
+                
+                pot = 0;
+                gameStarted = false;
+                disableAllButtons();
+                setTimeout(startNewHand, 3000);
+            }, 2000);
+        }
+        
+        // Avalia a força da mão (para decisões do computador)
+        function evaluateHandStrength(cards) {
+            if (cards.length < 5) return 0; // Não há cartas suficientes
+            
+            // Implementação simplificada - em um jogo real, isso seria mais complexo
+            const score = evaluateHand(cards);
+            
+            // Normaliza o score para uma escala de 0 a 1
+            if (score >= 8000000) return 1.0; // Straight flush
+            if (score >= 7000000) return 0.9; // Quadra
+            if (score >= 6000000) return 0.8; // Full house
+            if (score >= 5000000) return 0.7; // Flush
+            if (score >= 4000000) return 0.6; // Sequência
+            if (score >= 3000000) return 0.5; // Trinca
+            if (score >= 2000000) return 0.4; // Dois pares
+            if (score >= 1000000) return 0.3; // Um par
+            
+            // Nada - avalia as cartas altas
+            const highCardValue = score / 10000;
+            return highCardValue / 14; // Normaliza para 0-1
+        }
+        
+        // Avalia a mão e retorna um score (maior é melhor)
+        function evaluateHand(cards) {
+            // Implementação simplificada de avaliação de mão de poker
+            // Retorna um score numérico onde maior é melhor
+            
+            // Ordena as cartas por valor
+            const sortedCards = [...cards].sort((a, b) => {
+                return cardValue(b.value) - cardValue(a.value);
+            });
+            
+            // Verifica por combinações
+            const flush = checkFlush(sortedCards);
+            const straight = checkStraight(sortedCards);
+            
+            if (flush && straight) {
+                // Straight flush
+                if (sortedCards[0].value === 'A' && sortedCards[4].value === 'K') {
+                    return 9000000; // Royal flush
+                }
+                return 8000000 + cardValue(sortedCards[0].value);
+            }
+            
+            const counts = countCards(sortedCards);
+            
+            // Quadra
+            if (counts.some(c => c.count === 4)) {
+                const quadValue = counts.find(c => c.count === 4).value;
+                const kicker = counts.find(c => c.count !== 4).value;
+                return 7000000 + cardValue(quadValue) * 100 + cardValue(kicker);
+            }
+            
+            // Full house
+            if (counts.some(c => c.count === 3) && counts.some(c => c.count === 2)) {
+                const trioValue = counts.find(c => c.count === 3).value;
+                const pairValue = counts.find(c => c.count === 2).value;
+                return 6000000 + cardValue(trioValue) * 100 + cardValue(pairValue);
+            }
+            
+            // Flush
+            if (flush) {
+                return 5000000 + 
+                    cardValue(sortedCards[0].value) * 10000 +
+                    cardValue(sortedCards[1].value) * 1000 +
+                    cardValue(sortedCards[2].value) * 100 +
+                    cardValue(sortedCards[3].value) * 10 +
+                    cardValue(sortedCards[4].value);
+            }
+            
+            // Sequência
+            if (straight) {
+                return 4000000 + cardValue(sortedCards[0].value);
+            }
+            
+            // Trinca
+            if (counts.some(c => c.count === 3)) {
+                const trioValue = counts.find(c => c.count === 3).value;
+                const kickers = counts.filter(c => c.count !== 3)
+                                     .sort((a, b) => cardValue(b.value) - cardValue(a.value));
+                return 3000000 + 
+                    cardValue(trioValue) * 10000 +
+                    cardValue(kickers[0].value) * 100 +
+                    cardValue(kickers[1].value);
+            }
+            
+            // Dois pares
+            const pairs = counts.filter(c => c.count === 2);
+            if (pairs.length >= 2) {
+                const pairValues = pairs.map(p => cardValue(p.value))
+                                        .sort((a, b) => b - a);
+                const kicker = counts.find(c => c.count === 1).value;
+                return 2000000 + 
+                    pairValues[0] * 10000 +
+                    pairValues[1] * 100 +
+                    cardValue(kicker);
+            }
+            
+            // Um par
+            if (pairs.length === 1) {
+                const pairValue = pairs[0].value;
+                const kickers = counts.filter(c => c.count === 1)
+                                     .sort((a, b) => cardValue(b.value) - cardValue(a.value));
+                return 1000000 + 
+                    cardValue(pairValue) * 10000 +
+                    cardValue(kickers[0].value) * 1000 +
+                    cardValue(kickers[1].value) * 100 +
+                    cardValue(kickers[2].value);
+            }
+            
+            // Carta alta
+            return cardValue(sortedCards[0].value) * 10000 +
+                   cardValue(sortedCards[1].value) * 1000 +
+                   cardValue(sortedCards[2].value) * 100 +
+                   cardValue(sortedCards[3].value) * 10 +
+                   cardValue(sortedCards[4].value);
+        }
+        
+        // Verifica se há um flush
+        function checkFlush(cards) {
+            const suitCounts = {};
+            for (let card of cards) {
+                suitCounts[card.suit] = (suitCounts[card.suit] || 0) + 1;
+                if (suitCounts[card.suit] >= 5) return true;
+            }
+            return false;
+        }
+        
+        // Verifica se há uma sequência
+        function checkStraight(cards) {
+            const values = cards.map(c => cardValue(c.value));
+            const uniqueValues = [...new Set(values)].sort((a, b) => b - a);
+            
+            // Verifica sequência de 5 cartas
+            for (let i = 0; i <= uniqueValues.length - 5; i++) {
+                if (uniqueValues[i] - uniqueValues[i + 4] === 4) {
+                    return true;
+                }
+            }
+            
+            // Verifica sequência baixa (A-2-3-4-5)
+            if (uniqueValues.includes(14) && uniqueValues.includes(5) && uniqueValues.includes(4) && 
+                uniqueValues.includes(3) && uniqueValues.includes(2)) {
+                return true;
+            }
+            
+            return false;
+        }
+        
+        // Conta as ocorrências de cada valor de carta
+        function countCards(cards) {
+            const counts = {};
+            for (let card of cards) {
+                counts[card.value] = (counts[card.value] || 0) + 1;
+            }
+            
+            return Object.keys(counts).map(value => ({
+                value,
+                count: counts[value]
+            })).sort((a, b) => {
+                if (b.count !== a.count) return b.count - a.count;
+                return cardValue(b.value) - cardValue(a.value);
+            });
+        }
+        
+        // Converte o valor da carta para numérico
+        function cardValue(value) {
+            const values = {
+                '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, 
+                '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14
+            };
+            return values[value];
+        }
+        
+        // Inicia o jogo quando a página carrega
+        window.onload = function() {
+            initGame();
+            startNewHand();
+        };
+    </script>
+</body>
+</html>
